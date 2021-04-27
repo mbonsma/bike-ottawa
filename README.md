@@ -2,6 +2,8 @@
 
 A python analysis of the [City of Ottawa bicycle trip counter data](https://open.ottawa.ca/datasets/bicycle-trip-counters).
 
+To view the analysis and plots, click [bike_counts.ipynb](https://github.com/mbonsma/bike-ottawa/blob/main/bike_counts.ipynb) in the list above, or go [here](https://nbviewer.jupyter.org/github/mbonsma/bike-ottawa/blob/main/bike_counts.ipynb) for a nicely rendered version.
+
 The metadata for the bicycle trip counters is [here](https://www.arcgis.com/home/item.html?id=f218592c7fe74788906cc6a0eb190af9).
 
 ## Installation
