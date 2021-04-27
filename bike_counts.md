@@ -19,6 +19,8 @@ This notebook loads the bicycle count data, does some minimal cleaning, and prod
 
 The data was downloaded from the [City of Ottawa open data portal](https://open.ottawa.ca/datasets/bicycle-trip-counters).
 
+The metadata with collection information and location descriptions is [here](https://www.arcgis.com/home/item.html?id=f218592c7fe74788906cc6a0eb190af9).
+
 ```python
 # load packages
 import pandas as pd
@@ -120,11 +122,66 @@ count_data['year'] = count_data['date_dt'].dt.year
 count_data['month'] = count_data['date_dt'].dt.month
 ```
 
+## Add human-readable location names
+
+This is copied from the [metadata](https://www.arcgis.com/home/item.html?id=f218592c7fe74788906cc6a0eb190af9).
+
+1_ALEX: Ottawa approach to the NCC Alexandra Bridge Bikeway This counter was not operational for most of 2010 due to bridge construction
+
+2_ORPY: NCC Ottawa River Pathway approximately 100m east of the Prince of Wales Bridge
+
+3_COBY: NCC Eastern Canal Pathway approximately 100m north of the Corktown Bridge. WINTER counter
+
+4_CRTZ: NCC Western Canal Pathway approximately 200m north of “The Ritz”
+
+5_LMET Laurier Segregated Bike lane just west of Metcalfe WINTER counter
+
+6_LLYN Laurier Segregated Bike lane just east of Lyon. WINTER counter
+
+7_LBAY Laurier Segregated Bike lane just west of Bay. WINTER counter
+
+8_SOMO Somerset bridge over O-Train west-bound direction only WINTER counter (best effort- see notes)
+
+9_OYNG O-Train Pathway just north of Young Street
+
+10_OGLD O-Train Pathway just north of Galdstone Avenue
+
+11_OBVW O-Train Pathway just north of Bayview Station
+
+12a_ADAWE Adàwe Crossing Bikes. WINTER counter
+
+12b_ADAWE Adàwe Crossing Pedestrians. WINTER counter
+
 ```python
-# plot all locations?
-# this takes a super long time to run!
-sns.catplot(x = 'month_day', y = 'count', col = 'location', col_wrap = 3, data = count_data, 
-              hue = 'year', kind = 'point')
+# Add human-readable location names
+# nothing for it but to do this manually
+
+locations = count_data['location'].unique()
+print(locations)
+
+# make this a dictionary so that it's stable if the column names move around at all
+location_names_dict = {"1^ALEX" : "Alexandra Bridge",
+                       "2^ORPY" : "ORP Prince of Wales",
+                       "3^COBY" : "Canal Path East, Corktown",
+                       "4^CRTZ" : "Canal Path West, Ritz",
+                       "5^LMET" : "Laurier at Metcalfe",
+                       "6^LLYN" : "Laurier at Lyon",
+                       "7^LBAY" : "Laurier at Bay",
+                       "8^SOMO" : "Somerset Bridge",
+                       "9 OYNG 1" : "O-Train Path, Young",
+                       "10^OGLD" : "O-Train Path, Gladstone",
+                       "11 OBVW" : "O-Train Path, Bayview",
+                       "Portage Bridge" : "Portage Bridge",
+                       "12a^ADAWE" : "Adàwe Crossing, bikes",
+                       "12b^ADAWE" : "Adàwe Crossing, pedestrians"}
+
+# make a new column with human-readable location names
+count_data["location_name"] = count_data['location'].map(location_names_dict)
+```
+
+```python
+# take a look at our new column:
+count_data.head()
 ```
 
 ## Plot a single location
@@ -190,15 +247,17 @@ count_data_recent = count_data[(count_data['year'] > 2016)]
 ```
 
 ```python
+# remove OYNG and Portage - no data for these years
 count_data_recent = count_data_recent[(count_data['location'] != '6^LLYN') & 
                  (count_data['location'] != '9 OYNG 1') &
                  (count_data['location'] != 'Portage Bridge')]
 ```
 
 ```python
-g = sns.catplot(x = 'month', y = 'count', col = 'location', col_wrap = 3, data = count_data_recent, 
+g = sns.catplot(x = 'month', y = 'count', col = 'location_name', col_wrap = 3, data = count_data_recent,
               hue = 'year', kind = 'box')
 g.set(ylim=(None, 5000))
+g.set_titles(col_template = '{col_name}') # rename subplots, code from here: https://wckdouglas.github.io/2016/12/seaborn_annoying_title
 plt.savefig("bike_counts_2017_2020_all_locations.png", dpi = 200)
 ```
 
