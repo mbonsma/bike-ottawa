@@ -73,6 +73,7 @@ count_data = count_data.sort_values(by = 'date_dt')
 
 ```python
 # plot one location to get a feel for the data
+# 12a^ADAWE is the bicycle counter, 12b^ADAWE is the pedestrian counter
 fig, ax = plt.subplots()
 
 ax.plot(count_data['date_dt'], count_data['12a^ADAWE'])
@@ -177,6 +178,12 @@ canal_path_corktown_recent = canal_path_corktown[(canal_path_corktown['year'] > 
 sns.boxplot(x='month', y='count', data=canal_path_corktown_recent, hue = 'year')
 plt.savefig("bike_counts_by_month_canal_path_corktown_east.png", dpi = 150)
 ```
+
+## Plot multiple locations
+
+The following plot compares all bike counter locations for the years 2017 to 2020. 
+
+For most locations, counts seem to be down in 2020 compared to previous years. One extreme example is LMET, the Laurier bike lane west of Metcalfe. I assume this is way down because people aren't commuting to work downtown? On the other hand, there is a noticeable 2020 uptick for 12b Adawe, which is the Adawe crossing pedestrian counter (12a Adawe is bikes). 
 
 ```python
 count_data_recent = count_data[(count_data['year'] > 2016)]
