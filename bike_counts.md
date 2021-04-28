@@ -255,12 +255,12 @@ count_data_recent = count_data_recent[(count_data['location'] != '6^LLYN') &
 
 ```python
 g = sns.catplot(x = 'month', y = 'count', col = 'location_name', col_wrap = 3, data = count_data_recent,
-              hue = 'year', kind = 'box')
-g.set(ylim=(None, 5000))
+              hue = 'year', kind = 'bar', estimator = sum, ci = None) # each bar is the sum of all the days in the month
+g.set(ylim=(None, 9.2*10**4))
 g.set_titles(col_template = '{col_name}') # rename subplots, code from here: https://wckdouglas.github.io/2016/12/seaborn_annoying_title
 plt.savefig("bike_counts_2017_2020_all_locations.png", dpi = 200)
 ```
 
-```python
+<!-- #raw -->
 
-```
+<!-- #endraw -->
