@@ -41,16 +41,50 @@ The Excel file the city provides has a different sheet for each year of data col
 ```python
 # the date and header format for 2010-2012 is different, will require extra parsing
 # 2013 has a note at the bottom which breaks the parsing
-# for now, stick to year >= 2014
-years = np.arange(2014, 2021, 1)
+years = np.arange(2013, 2022, 1)
 dataframes = []
 for year in years:
     dataframes.append(pd.read_excel(xls, str(year), header = 0))
 ```
 
+## Cleaning the dates and removing annotations
+
+Unfortunately several different date formats are used, so we have to be careful when converting the dates to a standard format.
+
+Here, we loop through each sheet separately and parse the dates into a `datetime` object.
+
+2014 & 2015 go okay, 2016 needs special attention, so does 2017
+
+```python
+dataframes_datetime = []
+
+for i, df in enumerate(dataframes):
+    year = years[i]
+    if year == 2013: # remove note at the bottom
+        df = df.iloc[:365]
+    elif year == 2016: # date format changes between March and April 2016
+        df1 = df.iloc[:91] # convert normally
+        df2 = df.iloc[91:] # use dayfirst = True
+        
+        df1['date_dt'] = pd.to_datetime(df1['Date'])
+        df2['date_dt'] = pd.to_datetime(df2['Date'], dayfirst = True)
+    
+        df = pd.concat([df1, df2]) # stick them back together
+        
+    elif year == 2017:
+        df['date_dt'] = pd.to_datetime(df['Date'], dayfirst = True)
+        
+    else:
+        df['date_dt'] = pd.to_datetime(df['Date'])
+    
+    dataframes_datetime.append(df)
+    
+    
+```
+
 ```python
 # smoosh all the years together into one big table
-count_data = pd.concat(dataframes)
+count_data = pd.concat(dataframes_datetime)
 ```
 
 ```python
@@ -59,24 +93,16 @@ count_data.columns
 ```
 
 ```python
-# the date format varies somewhat, so convert them to pandas datetime for consistency
-count_data['date_dt'] = pd.to_datetime(count_data['Date'])
-```
-
-```python
-# some of the dates aren't in order...
+# check if the dates are in order (they are entered in order in the spreadsheet)
 plt.plot(np.argsort(count_data['date_dt']))
 ```
 
-```python
-# sort the table so that all the dates are in sequential order (helps with plotting)
-count_data = count_data.sort_values(by = 'date_dt')
-```
+Looks like we parsed the dates correctly!
 
 ```python
 # plot one location to get a feel for the data
 # 12a^ADAWE is the bicycle counter, 12b^ADAWE is the pedestrian counter
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize = (16,5))
 
 ax.plot(count_data['date_dt'], count_data['12a^ADAWE'])
 
@@ -94,6 +120,8 @@ count_data = count_data.drop(columns=['Unnamed: 10', 'Note:', '1. ALEX: internal
 # check out what's left after dropping unused columns
 count_data.columns
 ```
+
+There are a few column names that should be grouped, like '11 OBVW' and '11^OBVW', same for 9.
 
 ```python
 # reshape data to long format for faceting
@@ -169,8 +197,10 @@ location_names_dict = {"1^ALEX" : "Alexandra Bridge",
                        "7^LBAY" : "Laurier at Bay",
                        "8^SOMO" : "Somerset Bridge",
                        "9 OYNG 1" : "O-Train Path, Young",
+                       "9^OYNG" : "O-Train Path, Young",
                        "10^OGLD" : "O-Train Path, Gladstone",
                        "11 OBVW" : "O-Train Path, Bayview",
+                       "11^OBVW" : "O-Train Path, Bayview",
                        "Portage Bridge" : "Portage Bridge",
                        "12a^ADAWE" : "Adàwe Crossing, bikes",
                        "12b^ADAWE" : "Adàwe Crossing, pedestrians"}
@@ -247,20 +277,18 @@ count_data_recent = count_data[(count_data['year'] > 2016)]
 ```
 
 ```python
-# remove OYNG and Portage - no data for these years
+# remove OYNG, LBAY, and Portage - no data for these years
 count_data_recent = count_data_recent[(count_data['location'] != '6^LLYN') & 
                  (count_data['location'] != '9 OYNG 1') &
+                 (count_data['location'] != '9^OYNG') &
+                 (count_data['location'] != '7^LBAY') &
                  (count_data['location'] != 'Portage Bridge')]
 ```
 
 ```python
 g = sns.catplot(x = 'month', y = 'count', col = 'location_name', col_wrap = 3, data = count_data_recent,
               hue = 'year', kind = 'bar', estimator = sum, ci = None) # each bar is the sum of all the days in the month
-g.set(ylim=(None, 9.2*10**4))
+g.set(ylim=(None, 9.3*10**4))
 g.set_titles(col_template = '{col_name}') # rename subplots, code from here: https://wckdouglas.github.io/2016/12/seaborn_annoying_title
 plt.savefig("bike_counts_2017_2020_all_locations.png", dpi = 200)
 ```
-
-<!-- #raw -->
-
-<!-- #endraw -->
