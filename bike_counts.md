@@ -61,10 +61,11 @@ dataframes_datetime = []
 for i, df in enumerate(dataframes):
     year = years[i]
     if year == 2013: # remove note at the bottom
-        df = df.iloc[:365]
+        df = df.iloc[:365].copy()
+        df['date_dt'] = pd.to_datetime(df['Date'])
     elif year == 2016: # date format changes between March and April 2016
-        df1 = df.iloc[:91] # convert normally
-        df2 = df.iloc[91:] # use dayfirst = True
+        df1 = df.iloc[:91].copy() # convert normally
+        df2 = df.iloc[91:].copy() # use dayfirst = True
         
         df1['date_dt'] = pd.to_datetime(df1['Date'])
         df2['date_dt'] = pd.to_datetime(df2['Date'], dayfirst = True)
@@ -278,11 +279,11 @@ count_data_recent = count_data[(count_data['year'] > 2016)]
 
 ```python
 # remove OYNG, LBAY, and Portage - no data for these years
-count_data_recent = count_data_recent[(count_data['location'] != '6^LLYN') & 
-                 (count_data['location'] != '9 OYNG 1') &
-                 (count_data['location'] != '9^OYNG') &
-                 (count_data['location'] != '7^LBAY') &
-                 (count_data['location'] != 'Portage Bridge')]
+count_data_recent = count_data_recent[(count_data_recent['location'] != '6^LLYN') & 
+                 (count_data_recent['location'] != '9 OYNG 1') &
+                 (count_data_recent['location'] != '9^OYNG') &
+                 (count_data_recent['location'] != '7^LBAY') &
+                 (count_data_recent['location'] != 'Portage Bridge')]
 ```
 
 ```python
