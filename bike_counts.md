@@ -293,3 +293,121 @@ g.set(ylim=(None, 9.3*10**4))
 g.set_titles(col_template = '{col_name}') # rename subplots, code from here: https://wckdouglas.github.io/2016/12/seaborn_annoying_title
 plt.savefig("bike_counts_2017_2020_all_locations.png", dpi = 200)
 ```
+
+## Reproducing the city's total count plot
+
+The City [published a plot](https://cityofottawa.activehosted.com/index.php?action=social&chash=919d2356219c1fa0c0bd560246532c72.9030&nosocial=1) showing a percentage increase in cycling in total between 2010 and 2019. Let's try to reproduce it, at least approximately. The blog says "The analysis included annual data from 21 counters along 16 different cycling facilities in wards 11 to 18, those closest to the downtown core. The data was then analysed and weighted based on cyclist volumes and uniqueness. As shown in the chart below, the number of cycling trips along these routes increased by approximately 80% over this nine-year period." 
+
+I have no idea was "weighted based on cyclist volumes and uniqueness" means, or why one would do that. 
+
+```python
+summer_months = [5,6,7,8,9,10]
+
+summer_data = count_data[(count_data['month'].isin(summer_months))
+                         & (count_data['location'] != '12b^ADAWE')]
+```
+
+```python
+total_summer_counts = summer_data.groupby(['year', 'month'])['count'].sum().reset_index()
+```
+
+```python
+total_summer_counts.head()
+```
+
+```python
+fig, ax = plt.subplots()
+
+ax.plot(total_summer_counts['count'])
+
+skip_interval = int(len(total_summer_counts) / len(summer_months))
+
+ax.set_xticks(total_summer_counts.index[::skip_interval])
+ax.set_xticklabels(total_summer_counts['year'][::skip_interval])
+
+ax.set_xlabel("Year")
+ax.set_ylabel("Total count")
+```
+
+The City's plot had summed everything for a whole year:
+
+```python
+total_summer_counts_yearly = summer_data.groupby('year')['count'].sum().reset_index()
+```
+
+```python
+total_summer_counts_yearly
+```
+
+```python
+fig, ax = plt.subplots(figsize = (5,3))
+
+ax.plot(total_summer_counts_yearly['year'], total_summer_counts_yearly['count'], marker = 'o')
+
+ax.set_xlabel("Year")
+ax.set_ylabel("Total count")
+plt.title("Total counts at all locations, May-October")
+plt.tight_layout()
+plt.savefig("total_summer_counts.png", dpi = 150)
+```
+
+Well, I haven't included data from 2010 to 2012, and it seems like I don't have all the counters the City used, and I don't know what exactly they did in their analysis, but this does not look like their data. 
+
+
+## Winter Cycling
+
+We expect that the introduction of the Winter Cycling Network in 2015 increased the ridership on winterized routes. The locations 3 COBY, 5 LMET, 6 LLYN, 7 LBAY, 8 SOMO (cleared on a "best effort" basis), and the two 12 ADAWE routes are marked as winter counters. The metadata says that "only the counters designated as 'winter' counters have valid data after the first snow accumulation, until snow has been removed or melted away in spring."
+
+The image below shows the City's winter-maintained network (from [GeoOttawa](https://maps.ottawa.ca/geoottawa/) with the existing cycling network layer).
+
+It looks to me like the Somerset Bridge counter is not technically on one of the City's designated winter routes. That leaves Laurier, Adawa, and the Canal Path East at Corktown Bridge.
+
+
+![title](img/WinterCyclingNetwork.jpg)
+
+```python
+# get winter routes
+winter_counters = ['3^COBY', '5^LMET', '6^LLYN', '7^LBAY', '8^SOMO', '12a^ADAWE', '12b^ADAWE']
+winter_months = [11,12,1,2,3,4]
+
+winter_data = count_data[count_data['location'].isin(winter_counters)]
+winter_data = winter_data[winter_data['month'].isin(winter_months)]
+```
+
+```python
+winter_data.head()
+```
+
+```python
+g = sns.catplot(x = 'year', y = 'count', col = 'location_name', col_wrap = 3, data = winter_data,
+              hue = 'month', kind = 'bar', estimator = sum, ci = None) # each bar is the sum of all the days in the month
+g.set(ylim=(None, 8*10**4))
+g.set_titles(col_template = '{col_name}') # rename subplots, code from here: https://wckdouglas.github.io/2016/12/seaborn_annoying_title
+```
+
+```python
+winter_data_yearly = winter_data.groupby(['year', 'location_name'])['count'].sum().reset_index()
+```
+
+```python
+fig, ax = plt.subplots(figsize = (8,3.5))
+g = sns.lineplot(x = 'year', y = 'count', data = winter_data,
+              hue = 'location_name', marker = 'o', ci = None) # each bar is the sum of all the days in the month
+
+plt.title("Total cycle counts, November-April")
+plt.legend(bbox_to_anchor=(1.01, 1),
+           borderaxespad=0)
+plt.tight_layout()
+plt.savefig("winter_cycling_yearly_with_pedestrians.png", dpi = 150)
+```
+
+```python
+fig, ax = plt.subplots(figsize = (8,3.5))
+g = sns.lineplot(x = 'year', y = 'count', data = winter_data[winter_data['location_name'] != "Adàwe Crossing, pedestrians"],
+              hue = 'location_name', marker = 'o', ci = None) # each bar is the sum of all the days in the month
+plt.legend(bbox_to_anchor=(1.01, 1),
+           borderaxespad=0)
+plt.title("Total cycle counts, November-April")
+plt.tight_layout()
+plt.savefig("winter_cycling_yearly.png", dpi = 150)
+```
